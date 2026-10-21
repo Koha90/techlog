@@ -1,6 +1,8 @@
 use chrono::NaiveDate;
 
-/// A new work record before it is saved.
+/// A technical work record before persistence.
+///
+/// Contains the work derails and at least one performer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WorkRecordDraft {
     pub performed_on: NaiveDate,
@@ -19,6 +21,11 @@ pub enum WorkRecordError {
 }
 
 impl WorkRecordDraft {
+    /// Validates the work description and performer list.
+    ///
+    /// Returns an error if the description is blank,
+    /// no performers are provided, or any performer
+    /// has a blank name.
     pub fn validate(&self) -> Result<(), WorkRecordError> {
         if self
             .description
