@@ -4,7 +4,10 @@ use rusqlite::Connection;
 
 mod work_records;
 
-pub use work_records::{SaveWorkError, save_work_record};
+pub use work_records::{
+    SaveWorkError, WorkRecordFilter, find_work_record, list_work_records,
+    list_work_records_filtered, save_work_record,
+};
 
 /// Initialize the SQLite connection and creates the initial schema.
 ///

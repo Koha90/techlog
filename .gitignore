@@ -1,1 +1,4 @@
 /target
+/techlog.db
+/techlog.db-shm
+/techlog.db-wal

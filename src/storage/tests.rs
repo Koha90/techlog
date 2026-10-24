@@ -97,3 +97,135 @@ fn rolls_back_work_when_performer_insert_fails() {
     assert_eq!(records_count, 0);
     assert_eq!(performers_count, 0);
 }
+
+#[test]
+fn reads_saved_work_with_performers() {
+    let mut conn = Connection::open_in_memory().unwrap();
+    init_db(&conn).unwrap();
+
+    let draft = WorkRecordDraft {
+        performed_on: NaiveDate::from_ymd_opt(2026, 10, 21).unwrap(),
+        department: "КИПиА".into(),
+        workshop: "ЦМЦ".into(),
+        equipment: Some("Пастеризатор".into()),
+        description: "Замена датчика даваления".into(),
+        performers: vec!["Иванов".into(), "Петров".into()],
+    };
+
+    let id = save_work_record(&mut conn, &draft).unwrap();
+
+    let record = find_work_record(&conn, id)
+        .unwrap()
+        .expect("saved record must exist");
+
+    assert_eq!(record.id, id);
+    assert_eq!(
+        record.description,
+        draft.description
+    );
+    assert_eq!(record.equipment, draft.equipment);
+    assert_eq!(record.performers, draft.performers);
+
+    let records = list_work_records(&conn).unwrap();
+
+    assert_eq!(records.len(), 1);
+    assert_eq!(records[0], record);
+    assert!(
+        find_work_record(&conn, id + 1)
+            .unwrap()
+            .is_none()
+    );
+}
+
+#[test]
+fn persists_work_after_database_reopen() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("techlog.db");
+
+    let id = {
+        let mut conn = Connection::open(&path).unwrap();
+        init_db(&conn).unwrap();
+
+        let draft = WorkRecordDraft {
+            performed_on: NaiveDate::from_ymd_opt(2026, 10, 21).unwrap(),
+            department: "КИПиА".into(),
+            workshop: "ЦМЦ".into(),
+            equipment: None,
+            description: "Регулировка датчика".into(),
+            performers: vec!["Иванов".into(), "Петров".into()],
+        };
+
+        save_work_record(&mut conn, &draft).unwrap()
+    };
+
+    let conn = Connection::open(&path).unwrap();
+    let record = find_work_record(&conn, id)
+        .unwrap()
+        .expect("record must survive database reopen");
+
+    assert_eq!(
+        record.description,
+        "Регулировка датчика"
+    );
+    assert_eq!(
+        record.performers,
+        vec!["Иванов", "Петров"]
+    );
+}
+
+#[test]
+fn filters_work_records_and_preserves_all_performers() {
+    let mut conn = Connection::open_in_memory().unwrap();
+    init_db(&conn).unwrap();
+
+    let drafts = [
+        WorkRecordDraft {
+            performed_on: NaiveDate::from_ymd_opt(2026, 10, 24).unwrap(),
+            department: "КИПиА".into(),
+            workshop: "ЦМЦ".into(),
+            equipment: None,
+            description: "Старая работа".into(),
+            performers: vec!["Иванов".into()],
+        },
+        WorkRecordDraft {
+            performed_on: NaiveDate::from_ymd_opt(2026, 10, 22).unwrap(),
+            department: "КИПиА".into(),
+            workshop: "ЦМЦ".into(),
+            equipment: None,
+            description: "Замена датчика".into(),
+            performers: vec!["Иванов".into(), "Петров".into()],
+        },
+        WorkRecordDraft {
+            performed_on: NaiveDate::from_ymd_opt(2026, 10, 22).unwrap(),
+            department: "Электрики".into(),
+            workshop: "ЦМЦ".into(),
+            equipment: None,
+            description: "Замена кабеля".into(),
+            performers: vec!["Иванов".into()],
+        },
+    ];
+
+    for draft in &drafts {
+        save_work_record(&mut conn, draft).unwrap();
+    }
+
+    let filter = WorkRecordFilter {
+        from: NaiveDate::from_ymd_opt(2026, 10, 21),
+        to: NaiveDate::from_ymd_opt(2026, 10, 23),
+        department: Some("КИПиА".into()),
+        workshop: Some("ЦМЦ".into()),
+        performer: Some("Иванов".into()),
+    };
+
+    let records = list_work_records_filtered(&conn, &filter).unwrap();
+
+    assert_eq!(records.len(), 1);
+    assert_eq!(
+        records[0].description,
+        "Замена датчика"
+    );
+    assert_eq!(
+        records[0].performers,
+        vec!["Иванов", "Петров"]
+    );
+}

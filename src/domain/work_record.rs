@@ -51,6 +51,31 @@ impl WorkRecordDraft {
     }
 }
 
+/// A persisted technical work record.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkRecord {
+    /// Unique database identifier.
+    pub id: i64,
+
+    /// Date when the work was performed.
+    pub performed_on: NaiveDate,
+
+    /// Technical department responsible for the work.
+    pub department: String,
+
+    /// Workshop where the work was performed.
+    pub workshop: String,
+
+    /// Optional equipment name or designation.
+    pub equipment: Option<String>,
+
+    /// Description of the completed work.
+    pub description: String,
+
+    /// Names of the employees who performed the work.
+    pub performers: Vec<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

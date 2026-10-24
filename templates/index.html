@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>TechLog | Журнал работ</title>
+
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: system-ui, sans-serif;
+        background: #282828;
+        color: #ebdbb2;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      main {
+        width: min(1100px, 100%);
+        margin: auto;
+        padding: 24px;
+      }
+
+      header {
+        margin-bottom: 32px;
+      }
+
+      h1 {
+        color: #fabd2f;
+        margin-bottom: 8px;
+      }
+
+      h2 {
+        margin-top: 0;
+      }
+
+      p {
+        line-height: 1.5;
+      }
+
+      .muted {
+        color: #a89984;
+      }
+
+      .panel {
+        background: #32302f;
+        border: 1px solid #504945;
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      label {
+        display: grid;
+        gap: 8px;
+        font-weight: 500;
+      }
+
+      .full {
+        grid-column: 1 / -1;
+      }
+
+      input,
+      textarea {
+        width: 100%;
+        padding: 12px;
+        background: #282828;
+        border: 1px solid #665c54;
+        border-radius: 8px;
+        color: #fbf1c7;
+        font: inherit;
+      }
+
+      input:focus,
+      textarea:focus {
+        outline: 2px solid #fabd2f;
+        outline-offset: 1px;
+      }
+
+      textarea {
+        min-height: 95px;
+        resize: vertical;
+      }
+
+      button {
+        padding: 13px 20px;
+        background: #b8bb26;
+        border: 0;
+        border-radius: 8px;
+        color: #282828;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #d5c4a1;
+      }
+
+      .record {
+        padding: 18px 0;
+        border-bottom: 1px solid #504945;
+      }
+
+      .record:last-child {
+        border-bottom: 0;
+      }
+
+      .record-header {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .record-date {
+        color: #fabd2f;
+        font-weight: 700;
+      }
+
+      .record-description {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      .filter-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .filter-actions a {
+        color: #83a598;
+        text-decoration: none;
+      }
+
+      .filter-actions a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 640px) {
+        main {
+          padding: 14px;
+        }
+
+        .panel {
+          padding: 16px;
+        }
+
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+
+        button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main>
+      <header>
+        <h1>TechLog</h1>
+        <p class="muted">Журнал выполненных технических работ</p>
+      </header>
+
+      <section class="panel">
+        <h2>Добавить работу</h2>
+
+        <form class="form-grid" action="/works" method="post">
+          <label>
+            Дата
+            <input
+              type="date"
+              name="performed_on"
+              value="{{ today }}"
+              required
+            />
+          </label>
+
+          <label>
+            Служба
+            <input type="text" name="department" placeholder="КИПиА" required />
+          </label>
+
+          <label>
+            Цех
+            <input type="text" name="workshop" placeholder="ЦМЦ" required />
+          </label>
+
+          <label>
+            Оборудование
+            <input type="text" name="equipment" placeholder="Пастеризатор" />
+          </label>
+
+          <label class="full">
+            Выполненные работы
+            <textarea
+              name="description"
+              placeholder="Что было сделано?"
+              required
+            ></textarea>
+          </label>
+
+          <label class="full">
+            Исполнители
+            <textarea
+              name="performers"
+              placeholder="Иванов И.И., Петров П.П."
+              required
+            ></textarea>
+          </label>
+
+          <div class="full">
+            <button type="submit">Сохранить работу</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Фильтр журнала</h2>
+
+        <form class="form-grid" action="/" method="get">
+          <label>
+            Дaтa от
+            <input type="date" name="from" value="{{ filters.from }}" />
+          </label>
+
+          <label>
+            Дата до
+            <input type="date" name="to" value="{{ filters.to }}" />
+          </label>
+
+          <label>
+            Служба
+            <input
+              type="text"
+              name="department"
+              value="{{ filters.department }}"
+              placeholder="КИПиА"
+            />
+          </label>
+
+          <label>
+            Цех
+            <input
+              type="text"
+              name="workshop"
+              value="{{ filters.workshop }}"
+              placeholder="ЦМЦ"
+            />
+          </label>
+
+          <label class="full">
+            Исполнитель
+            <input
+              type="text"
+              name="performer"
+              value="{{ filters.performer }}"
+              placeholder="Фамилия или часть имени"
+            />
+          </label>
+
+          <div class="full filter-actions">
+            <button type="submit">Применить</button>
+            <a href="/">Сбросить фильтры</a>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Журнал работ</h2>
+
+        {% if has_records %} {% for record in records %}
+        <article class="record">
+          <div class="record-header">
+            <span class="record-date"> {{ record.date }} </span>
+
+            <span class="muted">
+              {{ record.department }} · {{ record.workshop }}
+            </span>
+          </div>
+
+          <p class="muted">Оборудование: {{ record.equipment }}</p>
+
+          <p class="record-description">{{ record.description }}</p>
+
+          <p>
+            <strong>Исполнители:</strong>
+            {{ record.performers }}
+          </p>
+        </article>
+        {% endfor %} {% else %}
+        <p class="muted">Работ пока нет. Добавьте первую запись.</p>
+        {% endif %}
+      </section>
+    </main>
+  </body>
+</html>
