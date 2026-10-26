@@ -6,177 +6,28 @@
 
     <title>TechLog | Журнал работ</title>
 
-    <style>
-      :root {
-        color-scheme: dark;
-        font-family: system-ui, sans-serif;
-        background: #282828;
-        color: #ebdbb2;
-      }
+    <script src="/assets/theme.js"></script>
 
-      * {
-        box-sizing: border-box;
-      }
-
-      body {
-        margin: 0;
-      }
-
-      main {
-        width: min(1100px, 100%);
-        margin: auto;
-        padding: 24px;
-      }
-
-      header {
-        margin-bottom: 32px;
-      }
-
-      h1 {
-        color: #fabd2f;
-        margin-bottom: 8px;
-      }
-
-      h2 {
-        margin-top: 0;
-      }
-
-      p {
-        line-height: 1.5;
-      }
-
-      .muted {
-        color: #a89984;
-      }
-
-      .panel {
-        background: #32302f;
-        border: 1px solid #504945;
-        border-radius: 14px;
-        padding: 24px;
-        margin-bottom: 24px;
-      }
-
-      .form-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 16px;
-      }
-
-      label {
-        display: grid;
-        gap: 8px;
-        font-weight: 500;
-      }
-
-      .full {
-        grid-column: 1 / -1;
-      }
-
-      input,
-      textarea {
-        width: 100%;
-        padding: 12px;
-        background: #282828;
-        border: 1px solid #665c54;
-        border-radius: 8px;
-        color: #fbf1c7;
-        font: inherit;
-      }
-
-      input:focus,
-      textarea:focus {
-        outline: 2px solid #fabd2f;
-        outline-offset: 1px;
-      }
-
-      textarea {
-        min-height: 95px;
-        resize: vertical;
-      }
-
-      button {
-        padding: 13px 20px;
-        background: #b8bb26;
-        border: 0;
-        border-radius: 8px;
-        color: #282828;
-        font: inherit;
-        font-weight: 700;
-        cursor: pointer;
-      }
-
-      button:hover {
-        background: #d5c4a1;
-      }
-
-      .record {
-        padding: 18px 0;
-        border-bottom: 1px solid #504945;
-      }
-
-      .record:last-child {
-        border-bottom: 0;
-      }
-
-      .record-header {
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-
-      .record-date {
-        color: #fabd2f;
-        font-weight: 700;
-      }
-
-      .record-description {
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-      }
-
-      .filter-actions {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 20px;
-      }
-
-      .filter-actions a {
-        color: #83a598;
-        text-decoration: none;
-      }
-
-      .filter-actions a:hover {
-        text-decoration: underline;
-      }
-
-      @media (max-width: 640px) {
-        main {
-          padding: 14px;
-        }
-
-        .panel {
-          padding: 16px;
-        }
-
-        .form-grid {
-          grid-template-columns: 1fr;
-        }
-
-        button {
-          width: 100%;
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="/assets/app.css" />
   </head>
 
   <body>
     <main>
-      <header>
-        <h1>TechLog</h1>
-        <p class="muted">Журнал выполненных технических работ</p>
+      <header class="page-header">
+        <div>
+          <h1>TechLog</h1>
+          <p class="muted">Журнал выполненных технических работ</p>
+        </div>
+
+        <label class="theme-picker">
+          Тема
+
+          <select id="theme-select" aria-label="Цетовая схема">
+            <option value="system">Системная</option>
+            <option value="light">Светлая</option>
+            <option value="dark">Тёмная</option>
+          </select>
+        </label>
       </header>
 
       <section class="panel">
@@ -278,6 +129,16 @@
 
           <div class="full filter-actions">
             <button type="submit">Применить</button>
+
+            <button
+              type="submit"
+              formaction="/reports/docx"
+              formmethod="get"
+              class="export-button"
+            >
+              Скачать Word
+            </button>
+
             <a href="/">Сбросить фильтры</a>
           </div>
         </form>

@@ -14,19 +14,20 @@ use rusqlite::Connection;
 
 use crate::{
     domain::work_record::WorkRecordDraft,
-    storage::{WorkRecordFilter, list_work_records_filtered, save_work_record},
+    storage::{list_work_records_filtered, save_work_record},
 };
 
 use super::{
     AppState,
+    filters::parse_journal_filter,
     forms::{JournalQuery, NewWorkForm},
     views::{JournalTemplate, RecordView},
 };
 
-type HandlerError = (StatusCode, String);
+pub(super) type HandlerError = (StatusCode, String);
 
 /// Converts an internal error into an HTTP 500 response.
-fn internal_error(error: impl std::fmt::Display) -> HandlerError {
+pub(super) fn internal_error(error: impl std::fmt::Display) -> HandlerError {
     eprintln!("TechLog error: {error}");
 
     (
@@ -36,7 +37,7 @@ fn internal_error(error: impl std::fmt::Display) -> HandlerError {
 }
 
 /// Opens a SQLite connection with foreign key enforcement.
-fn open_connection(path: &Path) -> rusqlite::Result<Connection> {
+pub(super) fn open_connection(path: &Path) -> rusqlite::Result<Connection> {
     let conn = Connection::open(path)?;
 
     conn.busy_timeout(Duration::from_secs(5))?;
@@ -45,47 +46,12 @@ fn open_connection(path: &Path) -> rusqlite::Result<Connection> {
     Ok(conn)
 }
 
-/// Parses an optional date from a journal Query parameter.
-fn parse_filter_date(value: &str) -> Result<Option<NaiveDate>, HandlerError> {
-    let value = value.trim();
-
-    if value.is_empty() {
-        return Ok(None);
-    }
-
-    NaiveDate::parse_from_str(value, "%Y-%m-%d")
-        .map(Some)
-        .map_err(|_| {
-            (
-                StatusCode::BAD_REQUEST,
-                "Некорректная дата в фильтре".into(),
-            )
-        })
-}
-
-/// Normalizes an optional text filter.
-fn text_filter(value: &str) -> Option<String> {
-    let value = value.trim();
-
-    if value.is_empty() {
-        None
-    } else {
-        Some(value.to_owned())
-    }
-}
-
 /// Display work records matching the query parameters.
 pub(super) async fn show_journal(
     State(state): State<AppState>,
     Query(filters): Query<JournalQuery>,
 ) -> Result<Html<String>, HandlerError> {
-    let filter = WorkRecordFilter {
-        from: parse_filter_date(&filters.from)?,
-        to: parse_filter_date(&filters.to)?,
-        department: text_filter(&filters.department),
-        workshop: text_filter(&filters.workshop),
-        performer: text_filter(&filters.performer),
-    };
+    let filter = parse_journal_filter(&filters)?;
 
     if let (Some(form), Some(to)) = (filter.from, filter.to)
         && form > to

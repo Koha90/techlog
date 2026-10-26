@@ -7,8 +7,11 @@ use axum::{
     routing::{get, post},
 };
 
+mod assets;
+mod filters;
 mod forms;
 mod handlers;
+mod reports;
 mod views;
 
 /// Shared application configuration.
@@ -24,6 +27,18 @@ pub fn router(database_path: PathBuf) -> Router {
         .route(
             "/works",
             post(handlers::create_work),
+        )
+        .route(
+            "/assets/app.css",
+            get(assets::stylesheet),
+        )
+        .route(
+            "/assets/theme.js",
+            get(assets::theme_script),
+        )
+        .route(
+            "/reports/docx",
+            get(reports::download_report),
         )
         .with_state(AppState { database_path })
 }
