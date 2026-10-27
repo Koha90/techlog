@@ -229,3 +229,112 @@ fn filters_work_records_and_preserves_all_performers() {
         vec!["Иванов", "Петров"]
     );
 }
+
+#[test]
+fn creates_and_deactivates_employee() {
+    use crate::domain::employee::EmployeeDraft;
+
+    let conn = Connection::open_in_memory().unwrap();
+    init_db(&conn).unwrap();
+
+    let draft = EmployeeDraft {
+        full_name: " Иванов И.И. ".into(),
+        department: " КИПиА ".into(),
+    };
+
+    let employee = create_employee(&conn, &draft).unwrap();
+
+    assert!(employee.id > 0);
+    assert_eq!(employee.full_name, "Иванов И.И.");
+    assert_eq!(employee.department, "КИПиА");
+    assert!(employee.is_active);
+
+    let updated = set_employee_active(&conn, employee.id, false).unwrap();
+
+    assert!(updated);
+
+    let employees = list_employees(&conn).unwrap();
+
+    assert_eq!(employees.len(), 1);
+    assert_eq!(employees[0].id, employee.id);
+    assert!(!employees[0].is_active);
+}
+
+#[test]
+fn rejects_invalid_employee_without_inserting() {
+    use crate::domain::employee::EmployeeDraft;
+
+    let conn = Connection::open_in_memory().unwrap();
+    init_db(&conn).unwrap();
+
+    let draft = EmployeeDraft {
+        full_name: " ".into(),
+        department: "КИПиА".into(),
+    };
+
+    let result = create_employee(&conn, &draft);
+
+    assert!(matches!(
+        result,
+        Err(CreateEmployeeError::Validation(_))
+    ));
+
+    assert!(
+        list_employees(&conn)
+            .unwrap()
+            .is_empty()
+    );
+}
+
+#[test]
+fn upgrades_existing_database_without_losing_works() {
+    let conn = Connection::open_in_memory().unwrap();
+
+    // Simulate an existing database created before migration 002.
+    conn.execute_batch(include_str!(
+        "../../migrations/001_create_work_records.sql"
+    ))
+    .unwrap();
+
+    conn.execute_batch(
+        "INSERT INTO work_records
+         (performed_on, department, workshop, description)
+         VALUES (
+             '2026-10-24',
+             'КИПиА',
+             'ЦМЦ',
+             'Замена датчика давления'
+         );",
+    )
+    .unwrap();
+
+    let id = conn.last_insert_rowid();
+
+    // Migration must work on an existing database.
+    init_db(&conn).unwrap();
+
+    // Repeated initialization must not destroy existing data.
+    init_db(&conn).unwrap();
+
+    let work = find_work_record(&conn, id)
+        .unwrap()
+        .expect("existing work record must survive migration");
+
+    assert_eq!(
+        work.description,
+        "Замена датчика давления"
+    );
+
+    let version: i64 = conn
+        .pragma_query_value(None, "user_version", |row| {
+            row.get(0)
+        })
+        .unwrap();
+
+    assert_eq!(version, 2);
+    assert!(
+        list_employees(&conn)
+            .unwrap()
+            .is_empty()
+    );
+}

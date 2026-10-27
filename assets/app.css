@@ -233,6 +233,43 @@ button:hover {
   background: var(--input-bg);
 }
 
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.site-nav a {
+  color: var(--link);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.site-nav a:hover,
+.site-nav a[aria-current="page"] {
+  text-decoration: underline;
+}
+
+.employee-active {
+  color: var(--button);
+  font-weight: 600;
+}
+
+.employee-actions {
+  margin-top: 12px;
+}
+
+.secondary-button {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.secondary-button:hover {
+  background: var(--input-bg);
+}
+
 @media (max-width: 640px) {
   main {
     padding: 14px;

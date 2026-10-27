@@ -25,3 +25,16 @@ pub(super) struct JournalQuery {
     pub workshop: String,
     pub performer: String,
 }
+
+/// Form data used to register an employee.
+#[derive(Deserialize)]
+pub(super) struct NewEmployeeForm {
+    pub full_name: String,
+    pub department: String,
+}
+
+/// Form data used to change employee activity.
+#[derive(Deserialize)]
+pub(super) struct EmployeeStatusForm {
+    pub active: bool,
+}

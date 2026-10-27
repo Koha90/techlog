@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Сотрудники | TechLog</title>
+
+    <script src="/assets/theme.js"></script>
+    <link rel="stylesheet" href="/assets/app.css" />
+  </head>
+  <body>
+    <main>
+      <header class="page-header">
+        <div>
+          <h1>TechLog</h1>
+          <p class="muted">Справочник сотрудников</p>
+        </div>
+
+        <label class="theme-picker">
+          Тема
+          <select id="theme-select">
+            <option value="system">Системная</option>
+            <option value="light">Светлая</option>
+            <option value="dark">Тёмная</option>
+          </select>
+        </label>
+      </header>
+
+      <nav class="site-nav">
+        <a href="/">Журнал работ</a>
+        <a href="/employees" aria-current="page">Сотрудники</a>
+      </nav>
+
+      <section class="panel">
+        <h2>Добавить сотрудника</h2>
+
+        <form class="form-grid" action="/employees" method="post">
+          <label>
+            ФИО
+            <input
+              type="text"
+              name="full_name"
+              maxlength="120"
+              placeholder="Иванов Иван Иванович"
+              autocomplete="off"
+              required
+            />
+          </label>
+
+          <label>
+            Служба
+            <input
+              type="text"
+              name="department"
+              maxlength="100"
+              placeholder="КИПиА"
+              required
+            />
+          </label>
+
+          <div class="full">
+            <button type="submit">Добавить сотрудника</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Сотрудники</h2>
+
+        {% if has_employees %} {% for employee in employees %}
+        <article class="record">
+          <div class="record-header">
+            <strong>{{ employee.full_name }}</strong>
+
+            <span class="muted"> {{ employee.department }} </span>
+          </div>
+
+          {% if employee.is_active %}
+          <p class="employee-active">Активен</p>
+          {% else %}
+          <p class="muted">Неактивен</p>
+          {% endif %}
+
+          <form
+            action="/employees/{{ employee.id }}/status"
+            method="post"
+            class="employee-actions"
+          >
+            {% if employee.is_active %}
+            <input type="hidden" name="active" value="false" />
+            <button type="submit" class="secondary-button">
+              Деактивировать
+            </button>
+            {% else %}
+            <input type="hidden" name="active" value="true" />
+            <button type="submit">Восстановить</button>
+            {% endif %}
+          </form>
+        </article>
+        {% endfor %} {% else %}
+        <p class="muted">Сотрудников пока нет.</p>
+        {% endif %}
+      </section>
+    </main>
+  </body>
+</html>

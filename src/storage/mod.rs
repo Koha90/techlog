@@ -2,7 +2,10 @@
 
 use rusqlite::Connection;
 
+mod employees;
 mod work_records;
+
+pub use employees::{CreateEmployeeError, create_employee, list_employees, set_employee_active};
 
 pub use work_records::{
     SaveWorkError, WorkRecordFilter, find_work_record, list_work_records,
@@ -16,9 +19,31 @@ pub use work_records::{
 pub fn init_db(conn: &Connection) -> rusqlite::Result<()> {
     conn.execute_batch("PRAGMA foreign_keys = ON;")?;
 
-    conn.execute_batch(include_str!(
-        "../../migrations/001_create_work_records.sql"
-    ))
+    let version: i64 = conn.pragma_query_value(None, "user_version", |row| {
+        row.get(0)
+    })?;
+
+    if version >= 2 {
+        return Ok(());
+    }
+
+    let tx = conn.unchecked_transaction()?;
+
+    if version < 1 {
+        tx.execute_batch(include_str!(
+            "../../migrations/001_create_work_records.sql"
+        ))?;
+    }
+
+    if version < 2 {
+        tx.execute_batch(include_str!(
+            "../../migrations/002_create_employees.sql"
+        ))?;
+    }
+
+    tx.pragma_update(None, "user_version", 2)?;
+
+    tx.commit()
 }
 
 #[cfg(test)]

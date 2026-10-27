@@ -8,6 +8,7 @@ use axum::{
 };
 
 mod assets;
+mod employees;
 mod filters;
 mod forms;
 mod handlers;
@@ -39,6 +40,14 @@ pub fn router(database_path: PathBuf) -> Router {
         .route(
             "/reports/docx",
             get(reports::download_report),
+        )
+        .route(
+            "/employees",
+            get(employees::show_employees).post(employees::create_employee),
+        )
+        .route(
+            "/employees/{id}/status",
+            post(employees::update_employee_status),
         )
         .with_state(AppState { database_path })
 }
