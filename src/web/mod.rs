@@ -38,6 +38,10 @@ pub fn router(database_path: PathBuf) -> Router {
             get(assets::theme_script),
         )
         .route(
+            "/assets/performers.js",
+            get(assets::performers_script),
+        )
+        .route(
             "/reports/docx",
             get(reports::download_report),
         )

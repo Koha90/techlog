@@ -76,6 +76,28 @@ pub struct WorkRecord {
     pub performers: Vec<String>,
 }
 
+/// A work record draft with performers selected from the directory.
+#[derive(Debug, Clone)]
+pub struct EmployeeWorkDraft {
+    /// Date of the completed work.
+    pub performed_on: NaiveDate,
+
+    /// Department responsible for the work.
+    pub department: String,
+
+    /// Workshop where the work was performed.
+    pub workshop: String,
+
+    /// Optional equipment name.
+    pub equipment: Option<String>,
+
+    /// Description of the completed work.
+    pub description: String,
+
+    /// IDs of employees who performed the work.
+    pub employee_ids: Vec<i64>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

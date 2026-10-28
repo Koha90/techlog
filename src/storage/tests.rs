@@ -331,9 +331,115 @@ fn upgrades_existing_database_without_losing_works() {
         })
         .unwrap();
 
-    assert_eq!(version, 2);
+    assert_eq!(version, 3);
     assert!(
         list_employees(&conn)
+            .unwrap()
+            .is_empty()
+    );
+}
+
+#[test]
+fn saves_work_selected_employes() {
+    use crate::domain::{employee::EmployeeDraft, work_record::EmployeeWorkDraft};
+
+    let mut conn = Connection::open_in_memory().unwrap();
+    init_db(&conn).unwrap();
+
+    let first = create_employee(
+        &conn,
+        &EmployeeDraft {
+            full_name: "Иванов И.И.".into(),
+            department: "КИПиА".into(),
+        },
+    )
+    .unwrap();
+
+    let second = create_employee(
+        &conn,
+        &EmployeeDraft {
+            full_name: "Петров П.П.".into(),
+            department: "КИПиА".into(),
+        },
+    )
+    .unwrap();
+
+    let draft = EmployeeWorkDraft {
+        performed_on: NaiveDate::from_ymd_opt(2026, 10, 27).unwrap(),
+        department: "КИПиА".into(),
+        workshop: "ЦМЦ".into(),
+        equipment: None,
+        description: "Замена датчика давления".into(),
+        employee_ids: vec![first.id, second.id],
+    };
+
+    let record_id = save_work_with_employees(&mut conn, &draft).unwrap();
+
+    let record = find_work_record(&conn, record_id)
+        .unwrap()
+        .expect("work record must exist");
+
+    assert_eq!(
+        record.performers,
+        vec!["Иванов И.И.", "Петров П.П."]
+    );
+
+    let mut stmt = conn
+        .prepare(
+            "SELECT employee_id
+             FROM work_record_performers
+             WHERE work_record_id = ?1
+             ORDER BY id",
+        )
+        .unwrap();
+
+    let ids = stmt
+        .query_map([record_id], |row| {
+            row.get::<_, i64>(0)
+        })
+        .unwrap()
+        .collect::<rusqlite::Result<Vec<_>>>()
+        .unwrap();
+
+    assert_eq!(ids, vec![first.id, second.id]);
+}
+
+#[test]
+fn rejects_work_with_inactive_employee() {
+    use crate::domain::{employee::EmployeeDraft, work_record::EmployeeWorkDraft};
+
+    let mut conn = Connection::open_in_memory().unwrap();
+    init_db(&conn).unwrap();
+
+    let employee = create_employee(
+        &conn,
+        &EmployeeDraft {
+            full_name: "Иванов И.И.".into(),
+            department: "КИПиА".into(),
+        },
+    )
+    .unwrap();
+
+    set_employee_active(&conn, employee.id, false).unwrap();
+
+    let draft = EmployeeWorkDraft {
+        performed_on: NaiveDate::from_ymd_opt(2026, 10, 27).unwrap(),
+        department: "КИПиА".into(),
+        workshop: "ЦМЦ".into(),
+        equipment: None,
+        description: "Проверка оборудования".into(),
+        employee_ids: vec![employee.id],
+    };
+
+    let result = save_work_with_employees(&mut conn, &draft);
+
+    assert!(matches!(
+        result,
+        Err(SaveEmployeeWorkError::EmployeeUnavailable(_))
+    ));
+
+    assert!(
+        list_work_records(&conn)
             .unwrap()
             .is_empty()
     );

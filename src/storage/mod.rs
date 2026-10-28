@@ -2,6 +2,7 @@
 
 use rusqlite::Connection;
 
+mod employee_work;
 mod employees;
 mod work_records;
 
@@ -11,6 +12,8 @@ pub use work_records::{
     SaveWorkError, WorkRecordFilter, find_work_record, list_work_records,
     list_work_records_filtered, save_work_record,
 };
+
+pub use employee_work::{SaveEmployeeWorkError, save_work_with_employees};
 
 /// Initialize the SQLite connection and creates the initial schema.
 ///
@@ -23,7 +26,7 @@ pub fn init_db(conn: &Connection) -> rusqlite::Result<()> {
         row.get(0)
     })?;
 
-    if version >= 2 {
+    if version >= 3 {
         return Ok(());
     }
 
@@ -41,7 +44,13 @@ pub fn init_db(conn: &Connection) -> rusqlite::Result<()> {
         ))?;
     }
 
-    tx.pragma_update(None, "user_version", 2)?;
+    if version < 3 {
+        tx.execute_batch(include_str!(
+            "../../migrations/003_link_work_performers.sql"
+        ))?;
+    }
+
+    tx.pragma_update(None, "user_version", 3)?;
 
     tx.commit()
 }

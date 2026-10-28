@@ -23,3 +23,14 @@ pub(super) async fn theme_script() -> impl IntoResponse {
         include_str!("../../assets/theme.js"),
     )
 }
+
+/// Serves the employee selection controller.
+pub(super) async fn performers_script() -> impl IntoResponse {
+    (
+        [(
+            header::CONTENT_TYPE,
+            "text/javascript; charset=utf-8",
+        )],
+        include_str!("../../assets/performers.js"),
+    )
+}

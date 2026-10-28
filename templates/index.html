@@ -7,6 +7,7 @@
     <title>TechLog | Журнал работ</title>
 
     <script src="/assets/theme.js"></script>
+    <script src="/assets/performers.js"></script>
 
     <link rel="stylesheet" href="/assets/app.css" />
   </head>
@@ -75,12 +76,25 @@
 
           <label class="full">
             Исполнители
-            <textarea
-              name="performers"
-              placeholder="Иванов И.И., Петров П.П."
-              required
-            ></textarea>
+
+            <select id="performer-select">
+              <option value="">Выберите сотрудника</option>
+
+              {% for employee in employees %}
+              <option value="{{ employee.id }}">
+                {{ employee.full_name }} · {{ employee.department }}
+              </option>
+              {% endfor %}
+            </select>
           </label>
+
+          <div
+            id="performer-chips"
+            class="full performer-chips"
+            aria-live="polite"
+          ></div>
+
+          <input type="hidden" name="employee_ids" id="employee-ids" />
 
           <div class="full">
             <button type="submit">Сохранить работу</button>

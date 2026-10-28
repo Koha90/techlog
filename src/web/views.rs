@@ -2,6 +2,7 @@
 
 use askama::Template;
 
+use crate::domain::employee::Employee;
 use crate::domain::work_record::WorkRecord;
 
 use super::forms::JournalQuery;
@@ -14,6 +15,7 @@ pub(super) struct JournalTemplate {
     pub records: Vec<RecordView>,
     pub has_records: bool,
     pub filters: JournalQuery,
+    pub employees: Vec<Employee>,
 }
 
 /// Display representation of a saved work record.

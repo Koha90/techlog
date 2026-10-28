@@ -10,7 +10,7 @@ pub(super) struct NewWorkForm {
     pub workshop: String,
     pub equipment: String,
     pub description: String,
-    pub performers: String,
+    pub employee_ids: String,
 }
 
 /// Query parameters for filtering the work journal.

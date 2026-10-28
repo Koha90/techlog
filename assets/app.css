@@ -270,6 +270,54 @@ button:hover {
   background: var(--input-bg);
 }
 
+#performer-select {
+  width: 100%;
+  padding: 12px;
+  background: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--input-border);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.performer-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.performer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  padding: 7px 10px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.performer-chip span {
+  overflow-wrap: anywhere;
+}
+
+.performer-chip button {
+  width: auto;
+  padding: 0 4px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.performer-chip button:hover {
+  background: transparent;
+  color: var(--accent);
+}
+
 @media (max-width: 640px) {
   main {
     padding: 14px;

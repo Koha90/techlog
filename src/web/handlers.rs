@@ -13,8 +13,10 @@ use chrono::{Local, NaiveDate};
 use rusqlite::Connection;
 
 use crate::{
-    domain::work_record::WorkRecordDraft,
-    storage::{list_work_records_filtered, save_work_record},
+    domain::work_record::EmployeeWorkDraft,
+    storage::{
+        SaveEmployeeWorkError, list_employees, list_work_records_filtered, save_work_with_employees,
+    },
 };
 
 use super::{
@@ -64,9 +66,13 @@ pub(super) async fn show_journal(
 
     let database_path = state.database_path;
 
-    let works = tokio::task::spawn_blocking(move || {
+    let (works, employees) = tokio::task::spawn_blocking(move || {
         let conn = open_connection(&database_path)?;
-        list_work_records_filtered(&conn, &filter)
+
+        let works = list_work_records_filtered(&conn, &filter)?;
+        let employees = list_employees(&conn)?;
+
+        Ok::<_, rusqlite::Error>((works, employees))
     })
     .await
     .map_err(internal_error)?
@@ -84,6 +90,10 @@ pub(super) async fn show_journal(
         has_records: !records.is_empty(),
         records,
         filters,
+        employees: employees
+            .into_iter()
+            .filter(|employee| employee.is_active)
+            .collect(),
     };
 
     let html = page
@@ -121,49 +131,51 @@ pub(super) async fn create_work(
         ));
     }
 
+    let employee_ids = form
+        .employee_ids
+        .split(',')
+        .map(str::trim)
+        .map(str::parse::<i64>)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| {
+            (
+                StatusCode::BAD_REQUEST,
+                "Некорректный список исполнителей".into(),
+            )
+        })?;
+
     let equipment = match form.equipment.trim() {
         "" => None,
         value => Some(value.to_owned()),
     };
 
-    let performers = form
-        .performers
-        .split([',', '\n'])
-        .map(str::trim)
-        .filter(|name| !name.is_empty())
-        .map(str::to_owned)
-        .collect();
-
-    let draft = WorkRecordDraft {
+    let draft = EmployeeWorkDraft {
         performed_on,
         department,
         workshop,
         equipment,
         description: form.description,
-        performers,
+        employee_ids,
     };
-
-    draft
-        .validate()
-        .map_err(|error| {
-            (
-                StatusCode::BAD_REQUEST,
-                format!("Некорректные данные: {error:?}"),
-            )
-        })?;
 
     let database_path = state.database_path;
 
-    tokio::task::spawn_blocking(move || -> Result<(), String> {
-        let mut conn = open_connection(&database_path).map_err(|e| e.to_string())?;
+    let result = tokio::task::spawn_blocking(move || {
+        let mut conn = open_connection(&database_path).map_err(SaveEmployeeWorkError::Database)?;
 
-        save_work_record(&mut conn, &draft).map_err(|error| format!("{error:?}"))?;
-
-        Ok(())
+        save_work_with_employees(&mut conn, &draft)
     })
     .await
-    .map_err(internal_error)?
     .map_err(internal_error)?;
 
-    Ok(Redirect::to("/"))
+    match result {
+        Ok(_) => Ok(Redirect::to("/")),
+
+        Err(SaveEmployeeWorkError::Database(error)) => Err(internal_error(error)),
+
+        Err(error) => Err((
+            StatusCode::BAD_REQUEST,
+            format!("Не удалось сохранить работу: {error:?}"),
+        )),
+    }
 }
